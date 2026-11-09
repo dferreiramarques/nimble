@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nimble</title>
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="/">nimble</a>
+    <input class="topo__nome" id="nome" type="text" maxlength="60" aria-label="Nome do produto" placeholder="Nome do produto" hidden />
+    <span class="grow"></span>
+    <span class="chip" id="chip" role="status"></span>
+    <button type="button" class="btn btn--texto" id="btn-exportar" hidden>Exportar</button>
+    <button type="button" class="btn btn--texto" id="btn-importar" hidden>Importar</button>
+    <input type="file" id="ficheiro" accept=".json,application/json" hidden />
+  </header>
+
+  <nav class="abas" id="abas" role="tablist" aria-label="Etapas do método" hidden></nav>
+
+  <main class="vista" id="vista" tabindex="-1">
+    <noscript><p class="vazio">O nimble precisa de JavaScript.</p></noscript>
+  </main>
+
+  <script src="/produto.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

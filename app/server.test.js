@@ -21,8 +21,41 @@ test('serves the parking page and the legal pages with the contact', async () =>
 
 test('health check, 404 for anything else, and no files outside the list', async () => {
   assert.strictEqual((await fetch(base + '/healthz')).status, 200);
-  for (const p of ['/server.js', '/package.json', '/../package.json', '/%2e%2e/server.js', '/app']) {
+  for (const p of ['/server.js', '/package.json', '/../package.json', '/%2e%2e/server.js', '/js/', '/supa.test.js', '/arquivo/direccao-produto/app.js', '/js/../server.js']) {
     assert.strictEqual((await fetch(base + p)).status, 404, p);
+  }
+});
+
+test('a Casca: /app, os scripts, e a config com o Supabase', async () => {
+  const r = await fetch(base + '/app');
+  assert.strictEqual(r.status, 200);
+  const html = await r.text();
+  assert.match(html, /<title>Casca · monco<\/title>/);
+  const csp = r.headers.get('content-security-policy');
+  assert.match(csp, /script-src 'self';/);
+  assert.match(csp, /connect-src 'self' https:\/\/[a-z]+\.supabase\.co;/);
+  assert.doesNotMatch(csp, /unsafe-inline/);
+  for (const m of html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"/g)) {
+    assert.strictEqual((await fetch(base + m[1])).status, 200, m[1]);
+  }
+  const cfg = await (await fetch(base + '/config.js')).text();
+  assert.match(cfg, /^window\.MONCO_CONFIG = \{"supabaseUrl":"https:\/\/[a-z]+\.supabase\.co","supabaseKey":"sb_publishable_[^"]+"\};\n$/);
+});
+
+test('a Casca não tem script inline, style="" nem handlers inline', async () => {
+  const t = await (await fetch(base + '/app')).text();
+  assert.doesNotMatch(t, /<script(?![^>]*\bsrc=)[^>]*>/);
+  assert.doesNotMatch(t, /\sstyle="|\son[a-z]+="/);
+});
+
+test('tema: blocos [data-theme] da casca.css só têm cores', () => {
+  const css = require('fs').readFileSync(require('path').join(__dirname, 'casca.css'), 'utf8');
+  const blocos = css.match(/\[data-theme="(light|dark)"\]\s*\{[^}]*\}/g) || [];
+  assert.strictEqual(blocos.length, 2);
+  for (const b of blocos) {
+    for (const p of b.replace(/^[^{]*\{|\}$/g, '').split(';').map((x) => x.split(':')[0].trim()).filter(Boolean)) {
+      assert.ok(p.startsWith('--') || p === 'color-scheme', 'não-cor no tema: ' + p);
+    }
   }
 });
 

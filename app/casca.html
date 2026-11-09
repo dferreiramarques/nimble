@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-PT" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Casca · monco</title>
+  <script src="/js/theme.js"></script>
+  <link rel="stylesheet" href="/casca.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar__in">
+      <a class="brand" href="/app#/">
+        <span class="brand__mark" aria-hidden="true">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M10 10v10"/></svg>
+        </span>
+        Casca
+      </a>
+      <span class="grow"></span>
+      <span class="who" id="quem"></span>
+      <button class="btn btn--text btn--icon" type="button" data-theme-toggle aria-label="Alternar tema claro / escuro" title="Tema"></button>
+      <button class="btn btn--text" type="button" id="btn-sair" hidden>Sair</button>
+    </div>
+  </header>
+
+  <main id="raiz" aria-live="polite"><p class="wrap loading">A abrir…</p></main>
+
+  <p class="toast" id="toast" role="status" hidden></p>
+
+  <script src="/config.js"></script>
+  <script src="/js/supa.js"></script>
+  <script src="/js/casca-modelo.js"></script>
+  <script src="/js/casca.js"></script>
+</body>
+</html>

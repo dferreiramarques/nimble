@@ -1,8 +1,8 @@
 {
   "name": "nimble",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
-  "description": "nimble.monco.io — parking page (privacy, terms) until the app is ready.",
+  "description": "nimble.monco.io — a Casca: projectos integrados monco (conta monco, canvas, equipa, acesso) sobre o Supabase.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
