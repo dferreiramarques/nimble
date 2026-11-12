@@ -111,10 +111,17 @@
     return String(s || 'projecto').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'projecto';
   }
 
+  /* atalho para abrir o projecto numa app em modo monco: <base>/?projecto=<id> (base vem do /config.js) */
+  function urlApp(base, projecto) {
+    var b = String(base || '').replace(/\/+$/, '');
+    if (!/^https?:\/\/[^\s?#]+$/.test(b)) return null;
+    return b + '/?projecto=' + encodeURIComponent(String(projecto || ''));
+  }
+
   var api = {
     TIPOS: TIPOS, PITCH: PITCH, LISTAS: LISTAS, APPS: APPS, LIM: LIM,
     linhas: linhas, limparCanvas: limparCanvas, limparCasca: limparCasca, limparPessoa: limparPessoa,
-    alocacaoTotal: alocacaoTotal, avisos: avisos, completude: completude, exportarProjecto: exportarProjecto, slug: slug, novoId: novoId
+    alocacaoTotal: alocacaoTotal, avisos: avisos, completude: completude, exportarProjecto: exportarProjecto, slug: slug, novoId: novoId, urlApp: urlApp
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else raiz.CascaModelo = api;

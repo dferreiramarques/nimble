@@ -375,12 +375,15 @@
   function vistaApps() {
     var p = st.p;
     var cartoes = APPS_INFO.map(function (a) {
+      // modo monco: só o Veredicto nesta fatia; o URL vem do /config.js
+      var noProjecto = a.app === 'veredicto' ? M.urlApp(cfg.veredictoUrl || a.url, p.id) : null;
       return el('div', { class: 'card app' }, [
         el('div', { class: 'card__tags' }, [el('span', { class: 'tag tag--neutra', text: a.etapa })]),
         el('h2', { class: 'card__title', text: a.nome }),
         el('p', { text: a.desc }),
-        el('p', { text: 'Modo monco (abrir este projecto na app): em breve.' }),
+        noProjecto ? null : el('p', { text: 'Modo monco (abrir este projecto na app): em breve.' }),
         el('div', { class: 'app__links' }, [
+          noProjecto ? el('a', { class: 'btn btn--primary btn--sm', href: noProjecto, text: 'Abrir neste projecto' }) : null,
           el('a', { class: 'btn btn--sm', href: a.url, target: '_blank', rel: 'noopener', text: 'Abrir standalone' }),
           el('button', { class: 'btn btn--text btn--sm', type: 'button', text: 'Exportar fatia', onclick: function () {
             var f = p.fatias[a.app];

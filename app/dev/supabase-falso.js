@@ -1,17 +1,26 @@
 #!/usr/bin/env node
 'use strict';
 /* supabase-falso.js — um Supabase de mentira, em memória, só para testar a Casca no browser sem contas reais.
- *   node dev/supabase-falso.js [porta]       (omissão 54399; só ouve em 127.0.0.1)
- *   servir a Casca com SUPABASE_URL=http://127.0.0.1:54399 SUPABASE_KEY=falsa
- * O «email» do link mágico não é enviado: GET /falso/entrar?email=…&redirect=… faz o redirect com os tokens.
+ *   node dev/supabase-falso.js [porta] [--semente]   (omissão 54399; só ouve em 127.0.0.1)
+ *   servir a Casca (e o Veredicto) com SUPABASE_URL=http://127.0.0.1:54399 SUPABASE_KEY=falsa
+ * O «email» do link mágico não é enviado: GET /falso/entrar?email=… faz o redirect com os tokens para o
+ * `redirect_to` que essa conta pediu (a Casca ou o Veredicto); `&redirect=…` força outro destino local.
+ * --semente: um projecto «Projecto semente» (dono@monco.io dono, editor@monco.io editor, leitor@monco.io leitor)
+ * com uma board `tipo: "incremento"` na fatia taskboards — para ligar hipóteses sem o Taskboards ter modo monco.
  * Imita as regras do esquema real (só @monco.io, membros, dono, leitor, gravar com versão), não o PostgREST inteiro. */
 const http = require('http');
 const crypto = require('crypto');
 
-const PORTA = Number(process.argv[2]) || 54399;
+const ARGS = process.argv.slice(2);
+const PORTA = Number(ARGS.find((a) => /^\d+$/.test(a))) || 54399;
+const SEMENTE = ARGS.includes('--semente');
 const APPS = ['casca', 'roadmaps', 'taskboards', 'diagramico', 'veredicto'];
 const db = { users: {}, projectos: [], membros: [], fatias: [], perfis: {} };
 let ultimoLink = null;
+const links = {};   // email → redirect_to pedido no último link mágico dessa conta
+// CORS: só origens locais (a Casca e o Veredicto em dev, em qualquer porta)
+const RE_LOCAL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+let origemPedido = null;
 
 function contaPorEmail(email) {
   email = email.toLowerCase();
@@ -29,9 +38,10 @@ const ehMembro = (u, p) => monco(u) && !!acesso(u, p);
 const ehDono = (u, p) => monco(u) && acesso(u, p) === 'dono';
 
 function enviar(res, status, corpo, extra) {
-  res.writeHead(status, Object.assign({ 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, extra || {}));
+  res.writeHead(status, Object.assign({ 'Content-Type': 'application/json' }, cors(), extra || {}));
   res.end(corpo === undefined ? '' : JSON.stringify(corpo));
 }
+function cors() { return origemPedido && RE_LOCAL.test(origemPedido) ? { 'Access-Control-Allow-Origin': origemPedido, Vary: 'Origin' } : { Vary: 'Origin' }; }
 function filtro(q, campo) { const v = q.get(campo); return v && v.startsWith('eq.') ? v.slice(3) : null; }
 function tokens(u) { return { access_token: 'tok.' + u.email, refresh_token: 'rt.' + u.email, expires_in: 3600, token_type: 'bearer', user: u }; }
 function seleccionar(linhas, q) {
@@ -48,19 +58,27 @@ function lerCorpo(req) {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const q = url.searchParams;
+  origemPedido = req.headers.origin || null;
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE', 'Access-Control-Allow-Headers': 'apikey,authorization,content-type,prefer' });
+    res.writeHead(204, Object.assign({ 'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE', 'Access-Control-Allow-Headers': 'apikey,authorization,content-type,prefer' }, cors()));
     return res.end();
   }
   const corpo = await lerCorpo(req);
+  origemPedido = req.headers.origin || null;   // de novo depois do await: daqui para baixo tudo é síncrono
   const u = quem(req);
   const p = url.pathname;
 
   // ── auth ──
-  if (p === '/auth/v1/otp') { ultimoLink = { email: corpo.email, redirect: q.get('redirect_to') }; console.log('link mágico (falso) para', corpo.email, '→ /falso/entrar'); return enviar(res, 200, {}); }
+  if (p === '/auth/v1/otp') {
+    const email = String(corpo.email || '').toLowerCase();
+    ultimoLink = { email, redirect: q.get('redirect_to') };
+    links[email] = q.get('redirect_to');
+    console.log('link mágico (falso) para', email, '→ http://127.0.0.1:' + PORTA + '/falso/entrar?email=' + encodeURIComponent(email), '(volta a', q.get('redirect_to') + ')');
+    return enviar(res, 200, {});
+  }
   if (p === '/falso/entrar') {
-    const email = q.get('email') || (ultimoLink && ultimoLink.email);
-    const destino = q.get('redirect') || (ultimoLink && ultimoLink.redirect);
+    const email = (q.get('email') || (ultimoLink && ultimoLink.email) || '').toLowerCase();
+    const destino = q.get('redirect') || links[email] || (ultimoLink && ultimoLink.redirect);
     if (!email || !destino || !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(destino)) return enviar(res, 400, { message: 'email e redirect local obrigatórios' });
     const t = tokens(contaPorEmail(email));
     res.writeHead(302, { Location: destino + '#access_token=' + t.access_token + '&expires_in=3600&refresh_token=' + t.refresh_token + '&token_type=bearer&type=magiclink' });
@@ -127,4 +145,30 @@ http.createServer(async (req, res) => {
     return enviar(res, 200, contas.filter((c) => db.perfis[c] !== undefined && (c === u.id || db.membros.some((a) => a.conta === u.id && db.membros.some((b) => b.projecto === a.projecto && b.conta === c)))).map((c) => ({ conta: c, nome: db.perfis[c] })));
   }
   return enviar(res, 404, { message: 'sem rota no Supabase falso: ' + req.method + ' ' + p });
-}).listen(PORTA, '127.0.0.1', () => console.log('Supabase falso em http://127.0.0.1:' + PORTA));
+}).listen(PORTA, '127.0.0.1', () => {
+  console.log('Supabase falso em http://127.0.0.1:' + PORTA);
+  if (SEMENTE) semear();
+});
+
+function semear() {
+  const dono = contaPorEmail('dono@monco.io'), editor = contaPorEmail('editor@monco.io'), leitor = contaPorEmail('leitor@monco.io');
+  const pr = { id: '5e3e47e0-0000-4000-8000-000000000001', nome: 'Projecto semente', criado_por: dono.id, criado_em: new Date().toISOString(), arquivado: false };
+  db.projectos.push(pr);
+  db.membros.push(
+    { projecto: pr.id, conta: dono.id, acesso: 'dono', apps: APPS.slice() },
+    { projecto: pr.id, conta: editor.id, acesso: 'editor', apps: APPS.slice() },
+    { projecto: pr.id, conta: leitor.id, acesso: 'leitor', apps: APPS.slice() }
+  );
+  const dados = {
+    casca: { canvas: { nome: pr.nome }, equipa: [] },
+    roadmaps: { app: 'roadmaps', version: 1, current: null, roadmaps: [] },
+    taskboards: { boards: [
+      { id: 'inc_semente01', name: 'Incremento 1 — primeiro roadmap', createdAt: pr.criado_em, tipo: 'incremento', feature: null, objectivo: 'Primeiro roadmap em menos de 10 min', inicio: '2026-11-09', fim: '2026-11-20', cards: [] },
+      { id: 'brd_ideias01', name: 'Ideias soltas', createdAt: pr.criado_em, tipo: 'idear', cards: [] }
+    ] },
+    diagramico: { diagramas: [] },
+    veredicto: { app: 'veredicto', versao: 1, hipoteses: [], decisoes: [] }
+  };
+  APPS.forEach((a) => db.fatias.push({ projecto: pr.id, app: a, dados: dados[a], versao: 1, por: dono.id, em: pr.criado_em }));
+  console.log('semente: «' + pr.nome + '» ' + pr.id + ' · dono@monco.io (dono), editor@monco.io, leitor@monco.io');
+}

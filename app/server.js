@@ -8,6 +8,8 @@ const path = require('path');
 // O URL e a chave publicável não são segredos (vão para o browser). Env permite apontar para um Supabase de teste.
 const SUPABASE_URL = (process.env.SUPABASE_URL || 'https://lnvnfksaoirhpgdmxdpn.supabase.co').replace(/\/+$/, '');
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_-tfgDWqIqOv2q9aQKmRZGA_jRgpoM_Q';
+// Onde vivem as apps com modo monco (atalhos em Apps → <URL>/?projecto=<id>).
+const VEREDICTO_URL = (process.env.VEREDICTO_URL || 'https://veredicto.monco.io').replace(/\/+$/, '');
 
 const FILES = {
   '/': 'index.html',
@@ -32,7 +34,7 @@ const HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Strict-Transport-Security': 'max-age=31536000'
 };
-const CONFIG_JS = 'window.MONCO_CONFIG = ' + JSON.stringify({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY }) + ';\n';
+const CONFIG_JS = 'window.MONCO_CONFIG = ' + JSON.stringify({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY, veredictoUrl: VEREDICTO_URL }) + ';\n';
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');

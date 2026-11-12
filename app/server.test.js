@@ -39,7 +39,7 @@ test('a Casca: /app, os scripts, e a config com o Supabase', async () => {
     assert.strictEqual((await fetch(base + m[1])).status, 200, m[1]);
   }
   const cfg = await (await fetch(base + '/config.js')).text();
-  assert.match(cfg, /^window\.MONCO_CONFIG = \{"supabaseUrl":"https:\/\/[a-z]+\.supabase\.co","supabaseKey":"sb_publishable_[^"]+"\};\n$/);
+  assert.match(cfg, /^window\.MONCO_CONFIG = \{"supabaseUrl":"https:\/\/[a-z]+\.supabase\.co","supabaseKey":"sb_publishable_[^"]+","veredictoUrl":"https:\/\/veredicto\.monco\.io"\};\n$/);
 });
 
 test('a Casca não tem script inline, style="" nem handlers inline', async () => {
@@ -71,4 +71,11 @@ test('security headers and no inline script or style in the pages', async () => 
 
 test('POST is refused', async () => {
   assert.strictEqual((await fetch(base + '/', { method: 'POST' })).status, 405);
+});
+
+test('o URL do Veredicto (atalho em Apps) vem do env para o /config.js', () => {
+  const { execFileSync } = require('child_process');
+  const script = "const s=require('./server.js');s.listen(0,'127.0.0.1',async()=>{const r=await fetch('http://127.0.0.1:'+s.address().port+'/config.js');process.stdout.write(await r.text());s.close();});";
+  const out = execFileSync(process.execPath, ['-e', script], { cwd: __dirname, env: Object.assign({}, process.env, { VEREDICTO_URL: 'http://127.0.0.1:5183/', SUPABASE_URL: 'http://127.0.0.1:54399', SUPABASE_KEY: 'falsa' }) }).toString();
+  assert.strictEqual(out, 'window.MONCO_CONFIG = {"supabaseUrl":"http://127.0.0.1:54399","supabaseKey":"falsa","veredictoUrl":"http://127.0.0.1:5183"};\n');
 });

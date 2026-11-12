@@ -71,3 +71,11 @@ test('slug para nomes de ficheiro', () => {
   assert.equal(M.slug('Receitas Pró!! 2026'), 'receitas-pro-2026');
   assert.equal(M.slug('///'), 'projecto');
 });
+
+test('atalho das apps: <url da config>/?projecto=<id>; URL inválido não dá atalho', () => {
+  const id = '11111111-2222-4333-8444-555555555555';
+  assert.equal(M.urlApp('https://veredicto.monco.io', id), 'https://veredicto.monco.io/?projecto=' + id);
+  assert.equal(M.urlApp('http://127.0.0.1:5183/', id), 'http://127.0.0.1:5183/?projecto=' + id);
+  assert.equal(M.urlApp('http://x.test', 'a&b=c'), 'http://x.test/?projecto=a%26b%3Dc');
+  for (const mau of ['', null, 'javascript:alert(1)', '//x.monco.io', 'https://x.io/?a=1']) assert.equal(M.urlApp(mau, id), null, String(mau));
+});
