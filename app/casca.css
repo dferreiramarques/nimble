@@ -80,6 +80,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 /* ── barra de topo ─────────────────────────────────────────────────────── */
 .topbar { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--border); }
 .topbar__in { display: flex; align-items: center; gap: 8px; height: 56px; }
+#mb { margin-left: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; color: var(--text); text-decoration: none; }
 .brand__mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: var(--r-md); background: var(--primary); color: var(--primary-ink); }
 

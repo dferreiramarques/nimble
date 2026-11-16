@@ -27,4 +27,12 @@
       });
     });
   });
+
+  // a Casca aplica o tema que vem na ligação de outra app (?tema=light|dark)
+  window.MoncoTema = {
+    set: function (t) {
+      if (t !== 'light' && t !== 'dark') return;
+      apply(t, Array.prototype.slice.call(document.querySelectorAll('[data-theme-toggle]')));
+    }
+  };
 })();

@@ -111,6 +111,21 @@
     return String(s || 'projecto').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'projecto';
   }
 
+  /* URL de uma app em modo monco, com o token de acesso no #hash (nunca vai para o servidor).
+     Só a Casca chama isto; só token de acesso, sem refresh_token. null se algo for inválido. */
+  var CAMINHOS = { '/app': 1 };
+  function urlComSessao(base, caminho, projecto, acesso, tema) {
+    var b = String(base || '').replace(/\/+$/, '');
+    if (!/^https?:\/\/[^\s?#]+$/.test(b) || !CAMINHOS[caminho]) return null;
+    var id = String(projecto || '').toLowerCase();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return null;
+    var tok = acesso && acesso.access_token;
+    if (typeof tok !== 'string' || tok.length < 1 || tok.length > 4096) return null;
+    var h = '#access_token=' + encodeURIComponent(tok) + '&expires_in=' + Math.max(1, Math.floor(Number(acesso.expires_in) || 0)) + '&token_type=bearer';
+    if (tema === 'light' || tema === 'dark') h += '&tema=' + tema;
+    return b + caminho + '?projecto=' + id + h;
+  }
+
   /* atalho para abrir o projecto numa app em modo monco: <base>/?projecto=<id> (base vem do /config.js) */
   function urlApp(base, projecto) {
     var b = String(base || '').replace(/\/+$/, '');
@@ -121,7 +136,7 @@
   var api = {
     TIPOS: TIPOS, PITCH: PITCH, LISTAS: LISTAS, APPS: APPS, LIM: LIM,
     linhas: linhas, limparCanvas: limparCanvas, limparCasca: limparCasca, limparPessoa: limparPessoa,
-    alocacaoTotal: alocacaoTotal, avisos: avisos, completude: completude, exportarProjecto: exportarProjecto, slug: slug, novoId: novoId, urlApp: urlApp
+    alocacaoTotal: alocacaoTotal, avisos: avisos, completude: completude, exportarProjecto: exportarProjecto, slug: slug, novoId: novoId, urlApp: urlApp, urlComSessao: urlComSessao
   };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else raiz.CascaModelo = api;

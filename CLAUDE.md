@@ -22,6 +22,7 @@ SUPABASE_URL=http://127.0.0.1:54399 SUPABASE_KEY=falsa PORT=5182 node server.js
 - `server.js` lista fechada de ficheiros, CSP por página, `/config.js` (URL + chave publicável, por env)
 - `casca.html` · `casca.css` (tokens Aura, acento laranja) · `js/theme.js` (chave `monco-theme`, partilhada)
 - `js/supa.js` cliente mínimo Auth + REST (refresh automático, 401 → refresh e repete) · `js/casca-modelo.js` limpeza da fatia `casca`, avisos, completude, exportação · `js/casca.js` interface
+- `js/monco-barra.js` + `monco-barra.css` a barra de apps `[C] | [D][R][T][V]`: **cada app tem uma cópia** (ao mudar o original, copiar de novo). Todas as ligações passam pela Casca (`/app?ir=<app>&projecto=<id>&tema=<t>`): a Casca guarda a sessão completa e entrega a cada app só um **token de acesso** no `#hash` (`CascaModelo.urlComSessao`); a app volta à Casca quando ele está a expirar. As apps nunca têm o refresh_token. Para uma app ganhar modo monco: pôr `monco: true` em `monco-barra.js` (e copiar).
 - `dev/supabase-falso.js` Supabase em memória que imita as regras do esquema (não é servido)
 
 ## Regras
@@ -34,7 +35,7 @@ SUPABASE_URL=http://127.0.0.1:54399 SUPABASE_KEY=falsa PORT=5182 node server.js
 7. 375 px sem scroll horizontal. UI em PT-PT.
 
 ## Falta
-Extracção do pitch por IA (edge function `extrair-pitch`) · modo monco nas outras apps (o Veredicto já tem, fatia 2; Taskboards a seguir) · sessão partilhada em `*.monco.io` (hoje a sessão vive no localStorage de nimble.monco.io) · configurar Auth no painel (site URL, redirects `https://*.monco.io/**`, email).
+Extracção do pitch por IA (edge function `extrair-pitch`) · modo monco nas outras apps (o Veredicto já tem, fatia 2; Taskboards a seguir) · configurar Auth no painel (site URL, redirects `https://*.monco.io/**`, email).
 
 ## Estilo
 Responder ao director em português, conciso. Commit e push só quando pedido. Verificar UI no browser (preview) contra o Supabase falso.

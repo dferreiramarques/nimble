@@ -6,6 +6,8 @@
   var cfg = window.MONCO_CONFIG || {};
   var S = window.Supa.criar({ url: cfg.supabaseUrl, key: cfg.supabaseKey });
 
+  var B = window.MoncoBarra;
+
   var APPS_INFO = [
     { app: 'diagramico', nome: 'Diagramico', etapa: '1 · Idear', url: 'https://diagramico.monco.io', desc: 'Jornadas, mapas de afinidade, diagramas ligados a features.' },
     { app: 'roadmaps', nome: 'Roadmaps', etapa: '2 · Priorizar', url: 'https://roadmaps.monco.io', desc: 'Now / Next / Later das features do produto.' },
@@ -56,10 +58,41 @@
     return m ? { projecto: m[1].toLowerCase(), tab: TABS.some(function (t) { return t[0] === m[2]; }) ? m[2] : 'canvas' } : { lista: true };
   }
 
+  /* ── passagem para as apps (modo monco) ────────────────────────────────────
+     A Casca é a única que tem a sessão completa. Cada app recebe só um token de acesso (no #hash, que não vai
+     para o servidor), o tema e o projecto. Quando o token expira, a app volta aqui (?ir=) e recebe outro. */
+  function temaActual() { return B.temaValido(document.documentElement.getAttribute('data-theme')) || 'dark'; }
+  function infoApp(id) { return APPS_INFO.filter(function (a) { return a.app === id; })[0] || null; }
+  function baseApp(a) { return a.app === 'veredicto' ? (cfg.veredictoUrl || a.url) : a.url; }
+
+  function irParaApp(id, projecto) {
+    var a = infoApp(id), meta = B.appPorId(id);
+    if (!a || !meta || !meta.monco) { avisar('esta app ainda não abre em modo monco'); return Promise.resolve(); }
+    return S.acesso().then(function (ac) {
+      var url = M.urlComSessao(baseApp(a), '/app', projecto, ac, temaActual());
+      if (!url) { avisar('endereço da app inválido'); return; }
+      location.assign(url);
+    }, function (e) {
+      if (e && e.status === 401) { S.sair(); return render(); }
+      avisar(e && e.message ? e.message : 'não foi possível abrir a app');
+    });
+  }
+
+  function projectoAberto() { var r = rota(); return st.p ? st.p.id : (r.projecto || null); }
+
+  function montarBarra() {
+    var u = S.utilizador(), c = $('mb');
+    if (!c || !B) return;
+    if (!u) { c.textContent = ''; return; }
+    var proj = projectoAberto();
+    B.montar(c, { atual: 'casca', semCasca: true, cascaUrl: location.origin, projecto: proj, aoIr: function (id) { irParaApp(id, proj); } });
+  }
+
   function render() {
     var u = S.utilizador();
     $('quem').textContent = u ? u.email : '';
     $('btn-sair').hidden = !u;
+    montarBarra();
     if (!u) return renderEntrar();
     var r = rota();
     if (r.lista) { st.p = null; return renderProjectos(); }
@@ -69,7 +102,7 @@
   }
 
   /* ── entrar ──────────────────────────────────────────────────────────── */
-  function renderEntrar(msg) {
+  function renderEntrar(msg, destino) {
     var email = el('input', { class: 'input', type: 'email', autocomplete: 'email', placeholder: 'nome@monco.io', required: true });
     var erro = el('p', { class: 'form__err', 'aria-live': 'assertive' });
     var ok = el('p', { class: 'ok-msg', 'aria-live': 'polite' });
@@ -86,7 +119,8 @@
       erro.textContent = ''; ok.textContent = '';
       if (!/^[^\s@]+@monco\.io$/.test(v)) { erro.textContent = 'Usa o teu email @monco.io.'; return; }
       botao.disabled = true;
-      S.enviarLink(v, location.origin + '/app').then(function () {
+      // `destino` (?ir=&projecto=&tema=) volta no link do email, para a app que pediu a sessão ser aberta depois de entrar
+      S.enviarLink(v, location.origin + '/app' + (destino || '')).then(function () {
         ok.textContent = 'Enviámos um link para ' + v + '. Abre-o neste browser.';
       }, function (e) { erro.textContent = e.message; }).then(function () { botao.disabled = false; });
     });
@@ -383,7 +417,7 @@
         el('p', { text: a.desc }),
         noProjecto ? null : el('p', { text: 'Modo monco (abrir este projecto na app): em breve.' }),
         el('div', { class: 'app__links' }, [
-          noProjecto ? el('a', { class: 'btn btn--primary btn--sm', href: noProjecto, text: 'Abrir neste projecto' }) : null,
+          noProjecto ? el('button', { class: 'btn btn--primary btn--sm', type: 'button', text: 'Abrir neste projecto', onclick: function () { irParaApp(a.app, p.id); } }) : null,
           el('a', { class: 'btn btn--sm', href: a.url, target: '_blank', rel: 'noopener', text: 'Abrir standalone' }),
           el('button', { class: 'btn btn--text btn--sm', type: 'button', text: 'Exportar fatia', onclick: function () {
             var f = p.fatias[a.app];
@@ -424,11 +458,34 @@
     if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's' && st.p && st.p.dirty) { ev.preventDefault(); gravar(); }
   });
 
+  /* ?ir=<app>&projecto=<id>&tema=<tema>: uma app (ou a barra) pede a sessão — na primeira abertura ou quando o token expirou.
+     Sem sessão, mostra a entrada e o link do email volta aqui com o mesmo pedido. */
+  var qs = new URLSearchParams(location.search);
+  var pedido = { ir: qs.get('ir'), projecto: B.projectoValido(qs.get('projecto')), tema: B.temaValido(qs.get('tema')) };
+  var destino = location.search;
+  if (pedido.tema && window.MoncoTema) window.MoncoTema.set(pedido.tema);
+
+  function arrancar() {
+    var meta = pedido.ir ? B.appPorId(pedido.ir) : null;
+    if (meta && meta.monco && pedido.projecto) {
+      if (!S.utilizador()) { montarBarra(); return renderEntrar(null, destino); }
+      montar([el('div', { class: 'center' }, [el('p', { class: 'muted', text: 'A abrir o ' + meta.nome + '…' })])]);
+      return irParaApp(pedido.ir, pedido.projecto);
+    }
+    // sem pedido de app: se a barra trouxe um projecto, abri-lo; em qualquer caso limpar o ?query
+    if (pedido.projecto && !pedido.ir && S.utilizador()) history.replaceState(null, '', '/app#/p/' + pedido.projecto + '/canvas');
+    else if (location.search) history.replaceState(null, '', '/app' + location.hash);
+    ultimaRota = location.hash;
+    render();
+  }
+
   if (S.lerHash(location.hash)) {
     S.entrarComHash(location.hash).then(function () {
-      history.replaceState(null, '', '/app#/'); ultimaRota = '#/'; render();
+      history.replaceState(null, '', location.pathname + location.search);
+      if (!location.search) { history.replaceState(null, '', '/app#/'); }
+      arrancar();
     }, function (e) { history.replaceState(null, '', '/app'); renderEntrar('O link falhou: ' + e.message); });
   } else {
-    render();
+    arrancar();
   }
 })();

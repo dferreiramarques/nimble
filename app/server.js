@@ -21,9 +21,11 @@ const FILES = {
   '/legal.css': 'legal.css',
   '/app': 'casca.html',
   '/casca.css': 'casca.css',
+  '/monco-barra.css': 'monco-barra.css',
   '/js/theme.js': 'js/theme.js',
   '/js/supa.js': 'js/supa.js',
   '/js/casca-modelo.js': 'js/casca-modelo.js',
+  '/js/monco-barra.js': 'js/monco-barra.js',
   '/js/casca.js': 'js/casca.js'
 };
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
