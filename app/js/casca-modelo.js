@@ -14,7 +14,7 @@
   var IDS_TIPO = TIPOS.map(function (t) { return t.id; });
   var PITCH = ['proposta', 'diferenciador', 'utilizadores', 'alcance', 'cronologia'];
   var LISTAS = ['taxonomia', 'temas', 'spikes', 'outcomes'];
-  var APPS = ['casca', 'roadmaps', 'taskboards', 'diagramico', 'veredicto'];
+  var APPS = ['casca', 'diagramico', 'roadmaps', 'taskboards', 'veredicto']; // a sequência do método: Idear, Priorizar, Construir, Validar
   var LIM = { nome: 80, tagline: 140, texto: 600, item: 80, itens: 50, pessoas: 50, papeis: 8, papel: 40 };
   var RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

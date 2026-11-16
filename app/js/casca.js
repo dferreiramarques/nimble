@@ -7,8 +7,8 @@
   var S = window.Supa.criar({ url: cfg.supabaseUrl, key: cfg.supabaseKey });
 
   var APPS_INFO = [
-    { app: 'roadmaps', nome: 'Roadmaps', etapa: '2 · Priorizar', url: 'https://roadmaps.monco.io', desc: 'Now / Next / Later das features do produto.' },
     { app: 'diagramico', nome: 'Diagramico', etapa: '1 · Idear', url: 'https://diagramico.monco.io', desc: 'Jornadas, mapas de afinidade, diagramas ligados a features.' },
+    { app: 'roadmaps', nome: 'Roadmaps', etapa: '2 · Priorizar', url: 'https://roadmaps.monco.io', desc: 'Now / Next / Later das features do produto.' },
     { app: 'taskboards', nome: 'Taskboards', etapa: '3 · Construir', url: 'https://taskboards.monco.io', desc: 'Incrementos: To Do · In Progress · Done.' },
     { app: 'veredicto', nome: 'Veredicto', etapa: '4 · Validar', url: 'https://veredicto.monco.io', desc: 'Hipóteses com métrica, sessões e decisão por incremento.' }
   ];
