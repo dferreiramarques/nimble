@@ -10,10 +10,13 @@ const server = require('./server.js');
 const ID = '11111111-2222-4333-8444-555555555555';
 const CASCA = 'https://nimble.monco.io';
 
-test('as apps seguem a sequência do método e só o Veredicto tem modo monco por agora', () => {
-  assert.deepEqual(B.APPS.map((a) => a.letra), ['D', 'R', 'T', 'V']);
+test('as apps seguem a sequência do método, cada uma com o seu ícone, e só o Veredicto tem modo monco por agora', () => {
+  assert.deepEqual(B.APPS.map((a) => a.id), ['diagramico', 'roadmaps', 'taskboards', 'veredicto']);
   assert.deepEqual(B.APPS.map((a) => a.etapa), ['1 · Idear', '2 · Priorizar', '3 · Construir', '4 · Validar']);
   assert.deepEqual(B.APPS.filter((a) => a.monco).map((a) => a.id), ['veredicto']);
+  for (const id of ['casca'].concat(B.APPS.map((a) => a.id))) {
+    assert.ok(B.ICONES[id] && B.ICONES[id].formas.length > 0 && ['traco', 'cheio'].includes(B.ICONES[id].modo), 'ícone de ' + id);
+  }
 });
 
 test('ligacao: sempre via Casca, com projecto e tema; nunca para uma app sem modo monco', () => {
